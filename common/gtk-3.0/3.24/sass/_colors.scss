@@ -1,13 +1,10 @@
 // When color definition differs for dark and light variant,
 // it gets @if ed depending on $variant
 
-$andrei_darken_amount: 25%;
-$andrei_lighten_amount: 25%;
-
 $base_color: if($variant !='dark', #ffffff, #404552);
-$text_color: if($variant !='dark', darken(#5c616c, $andrei_darken_amount), lighten(#D3DAE3, $andrei_lighten_amount));
+$text_color: if($variant !='dark', darken(#5c616c, 25%), lighten(#D3DAE3, 25%));
 $bg_color: if($variant !='dark', #F5F6F7, #383C4A);
-$fg_color: if($variant !='dark', darken(#5c616c, $andrei_darken_amount),lighten(#D3DAE3, $andrei_lighten_amount));
+$fg_color: if($variant !='dark', darken(#5c616c, 25%),lighten(#D3DAE3, 25%));
 
 $selected_fg_color: #ffffff;
 $selected_bg_color: #5294e2;

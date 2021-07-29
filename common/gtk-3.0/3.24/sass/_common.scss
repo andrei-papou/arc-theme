@@ -1961,7 +1961,7 @@ notebook {
       }
       &:checked {
         color: $fg_color;
-        background-color: $base_color;
+        background-color: if($variant != 'dark', $base_color, #353945);
         border-color: $borders_color;
       }
       // close button
