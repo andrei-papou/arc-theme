@@ -592,7 +592,7 @@ StScrollBar {
   //-margin-horizontal: 24px;
   height: 2px; //not really the whole box
   margin: 0;
-  background-color: transparent;
+  background-color: $selected_bg_color;
   border: none;
 }
 
@@ -818,8 +818,8 @@ StScrollBar {
 #panel {
   font-weight: bold;
   font-feature-settings: "tnum";
-  height: 2.1em;
-  min-height: 26px;
+  // height: 2.1em;
+  height: 1.8em;
   background-gradient-direction: none;
   background-color: $shell_osd_background_color;
   //background-clip: padding-box;
@@ -875,7 +875,7 @@ StScrollBar {
   }
 
   .panel-button {
-    -natural-hpadding: 10px;
+    -natural-hpadding: 7px;
     -minimum-hpadding: 6px;
     font-weight: bold;
     color: $_panel_fg_color;
