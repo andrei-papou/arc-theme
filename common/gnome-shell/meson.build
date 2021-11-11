@@ -47,86 +47,93 @@ sass_depend_files = run_command(
   check : true
 ).stdout().split()
 
-if get_option('gnome_shell_gresource')
-  gresource_depend_files = []
-
-  gresource_depend_files += [
-    meson.current_source_dir() / gnome_shell_ver / 'pad-osd.css'
-  ]
-
-  gresource_depend_files += run_command(
-    'find', '-L',
-    meson.current_source_dir() / gnome_shell_ver / 'icons',
-    meson.current_source_dir() / gnome_shell_ver / 'common-assets',
-    meson.current_source_dir() / gnome_shell_ver / 'light-assets',
-    meson.current_source_dir() / gnome_shell_ver / 'dark-assets',
-    meson.current_source_dir() / gnome_shell_ver / 'lighter-assets',
-    check : true
-  ).stdout().split()
-endif
-
 # compile and install
 
 foreach variant : get_option('variants')
-  if variant != 'darker'
-    if not (variant == 'lighter' and gnome_shell_ver.version_compare('<=3.30'))
 
-      if not get_option('transparency') and not gnome_shell_ver.version_compare('<=3.30')
-        input_scss = (variant == 'light' ? 'gnome-shell-solid.scss' : 'gnome-shell-solid-' + variant + '.scss')
-      else
-        input_scss = (variant == 'light' ? 'gnome-shell.scss' : 'gnome-shell-' + variant + '.scss')
-      endif
+  # no darker shell theme
+  if variant == 'darker'
+    continue
+  endif
 
-      output_css = (variant == 'light' ? 'gnome-shell.css' : 'gnome-shell-' + variant + '.css')
-
-      gnome_shell_css = custom_target(
-        output_css,
-        input : meson.current_source_dir() / gnome_shell_ver / 'sass' / input_scss,
-        output : output_css,
-        command : [sassc, '@INPUT@', '@OUTPUT@'],
-        build_by_default : true,
-        depend_files : sass_depend_files
-      )
-
-      if get_option('gnome_shell_gresource')
-        gresource_name = (variant == 'light' ? 'gnome-shell-theme' : 'gnome-shell-theme-' + variant)
-
-        gnome_shell_gresource = custom_target(
-        gresource_name + '-gresource',
-        input : meson.current_source_dir() / gnome_shell_ver / 'gresource' / gresource_name + '.gresource.xml',
-        output : gresource_name + '.gresource',
-        command : [
-          glib_compile_resources,
-          '--sourcedir=' + meson.current_source_dir() / gnome_shell_ver,
-          '--sourcedir=' + meson.current_build_dir(),
-          '--target=@OUTPUT@',
-          '@INPUT@'
-        ],
-        build_by_default : true,
-        install : true,
-        install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell'),
-        depends : gnome_shell_css,
-        depend_files: gresource_depend_files
-      )
-      endif
-
-      meson.add_install_script(
-        'sh', '-c',
-        'install -DT' + ' ' +
-        gnome_shell_css.full_path() + ' ' +
-        '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('gnome-shell') / 'gnome-shell.css'
-      )
-
-      install_subdir(
-        gnome_shell_ver / 'common-assets',
-        install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell')
-      )
-
-      install_subdir(
-        gnome_shell_ver / variant + '-assets',
-        install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell')
-      )
-
+  # lighter shell theme available only for 3.32-3.38
+  if variant == 'lighter'
+    if gnome_shell_ver.version_compare('<=3.30') or gnome_shell_ver.version_compare('>=40')
+      continue
     endif
   endif
+
+  # generate base SCSS file
+  input_scss = configure_file(
+    input: meson.current_source_dir() / gnome_shell_ver / 'sass' / 'gnome-shell.scss.in',
+    output : 'gnome-shell-' + variant + '.scss',
+    configuration : {
+      'variant' : variant,
+      'transparency' : get_option('transparency').to_string(),
+      'sass_path' : meson.current_source_dir() / gnome_shell_ver / 'sass',
+    }
+  )
+
+  output_css = (variant == 'light' ? 'gnome-shell.css' : 'gnome-shell-' + variant + '.css')
+
+  gnome_shell_css = custom_target(
+    output_css,
+    input : input_scss,
+    output : output_css,
+    command : [sassc, '@INPUT@', '@OUTPUT@'],
+    build_by_default : true,
+    depend_files : sass_depend_files
+  )
+
+  if get_option('gnome_shell_gresource')
+
+    # asset dependencies for gresource
+    gresource_depend_files = []
+    gresource_depend_files += [meson.current_source_dir() / gnome_shell_ver / 'pad-osd.css']
+    gresource_depend_files += run_command(
+      'find', '-L',
+      meson.current_source_dir() / gnome_shell_ver / 'icons',
+      meson.current_source_dir() / gnome_shell_ver / 'common-assets',
+      meson.current_source_dir() / gnome_shell_ver / variant + '-assets',
+      check : true
+    ).stdout().split()
+
+    gresource_name = (variant == 'light' ? 'gnome-shell-theme' : 'gnome-shell-theme-' + variant)
+
+    gnome_shell_gresource = custom_target(
+    gresource_name + '-gresource',
+    input : meson.current_source_dir() / gnome_shell_ver / 'gresource' / gresource_name + '.gresource.xml',
+    output : gresource_name + '.gresource',
+    command : [
+      glib_compile_resources,
+      '--sourcedir=' + meson.current_source_dir() / gnome_shell_ver,
+      '--sourcedir=' + meson.current_build_dir(),
+      '--target=@OUTPUT@',
+      '@INPUT@'
+    ],
+    build_by_default : true,
+    install : true,
+    install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell'),
+    depends : gnome_shell_css,
+    depend_files: gresource_depend_files
+  )
+  endif
+
+  meson.add_install_script(
+    'sh', '-c',
+    'install -DT' + ' ' +
+    gnome_shell_css.full_path() + ' ' +
+    '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('gnome-shell') / 'gnome-shell.css'
+  )
+
+  install_subdir(
+    gnome_shell_ver / 'common-assets',
+    install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell')
+  )
+
+  install_subdir(
+    gnome_shell_ver / variant + '-assets',
+    install_dir : prefix / install_dir.get(variant) / common_dirs.get('gnome-shell')
+  )
+
 endforeach
