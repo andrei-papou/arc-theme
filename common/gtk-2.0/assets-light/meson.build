@@ -1,19 +1,19 @@
-xfwm_light_assets = []
-xfwm_light_asset_files = []
+gtk2_light_assets = []
+gtk2_light_asset_files = []
 
-foreach asset : xfwm_asset_names
+foreach asset : gtk2_asset_names
 
   asset_filename = asset + '.png'
 
   if fs.exists(asset_filename)
-    xfwm_light_asset_files += meson.current_source_dir() / asset_filename
+    gtk2_light_asset_files += meson.current_source_dir() / asset_filename
   else
     if not inkscape.found()
       error('Program \'inkscape\' not found')
     endif
 
-    xfwm_light_assets += custom_target(
-      'xfwm-light-' + asset,
+    gtk2_light_assets += custom_target(
+      'gtk2-light-' + asset,
       input : 'assets.svg',
       output : asset_filename,
       command : [

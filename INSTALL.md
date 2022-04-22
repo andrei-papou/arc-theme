@@ -12,14 +12,19 @@ Or download and extract a [snapshot](https://github.com/jnsh/arc-theme/archive/m
 
 #### Build dependencies
 
-To build the theme the following packages are required:
-* `meson`
+The following packages are always required for building the theme:
+* `meson` version 0.53.0 or later
 
 The following packages are only required for building certain themes:
 * `sassc` for GTK 3, GTK 4, Cinnamon, and GNOME Shell
-* `inkscape` for GTK 2, GTK 3, GTK 4 and Xfwm
+* `glib-compile-resources` from `glib2` (or its development files, e.g. `libglib2.0-dev-bin` for Debian based distros or `glib2-devel` for RPM based distros), for GTK 3 and GTK 4 (and GNOME Shell if the `gnome_shell_gresource` build option is enabled)
 
 You can avoid these dependencies by choosing to not build specific themes using the `themes` build option.
+
+The following packages are only required for building certain themes from a git snapshot:
+* `inkscape` for GTK 2, GTK 3, GTK 4 and Xfwm
+
+These packages aren't required when building from a release tarball.
 
 #### Runtime dependencies
 
@@ -69,24 +74,21 @@ Some themes (at least GTK 2) aren't loaded from `~/.local/share/themes/`. You ca
 
 ## Versioned themes
 
-The source code comes branched for different versions of GTK 3, GTK 4, GNOME Shell, and Cinnamon. Only one version of those themes will be built and installed, and using the wrong versions will likely result in visual issues.
+The source code comes branched for different versions of GNOME Shell, and Cinnamon. Only one version of those themes will be built and installed, and using the wrong versions will likely result in visual issues.
 
-The versions that will be built can be set manually with `cinnamon_version`, `gnome_shell_version`, `gtk3_version` and `gtk4_version` build options.
+The versions that will be built can be set manually with `cinnamon_version` and `gnome_shell_version` build options.
 
 Otherwise the build system tries to determine correct versions using the following packages on the build environment:
 * `gnome-shell` for detecting GNOME Shell version
 * `cinnamon` for detecting Cinnamon version
-* `pkgconf` for detecting GTK 3 and GTK 4 versions
-* GTK 3 package, or its development files for distributions that ship those separately (e.g. `libgtk-3-dev` for Debian based distros or `gtk3-devel` for RPM based distros), for detecting GTK 3 version
-* GTK 4 package, or its development files for distributions that ship those separately (e.g. `libgtk-4-dev` for Debian based distros or `gtk4-devel` for RPM based distros), for detecting GTK 3 version
 
-**Note:** The build setup for GTK 3, GTK 4, Cinnamon and GNOME Shell themes will fail, if their versions can't be determined either from the build options, or from installed packages.
+**Note:** The build setup for Cinnamon and GNOME Shell themes will fail, if their versions can't be determined either from the build options, or from installed packages.
 
 ## Build options
 
 Arc-theme specific build options can be set or changed with `meson configure -Doption=value <build_directory>` e.g.
 
-    meson configure -Dthemes=gtk3,plank,xfwm -Dtransparency=false -Dgtk3_version=3.24 build/
+    meson configure -Dthemes=cinnamon,plank,xfwm -Dtransparency=false -Dcinnamon_version=5.0 build/
 
 Option | Default value | Description
 --- | --- | ---
@@ -95,8 +97,6 @@ Option | Default value | Description
 `transparency` | `true` | Enable or disable transparency
 `cinnamon_version` | - | Build Cinnamon theme for specific version
 `gnome_shell_version` | - | Build GNOME Shell theme for specific version
-`gtk3_version` | - | Build GTK 3 theme for specific version
-`gtk4_version` | - | Build GTK 4 theme for specific version
 `gnome_shell_gresource` | `false` | Compile GNOME Shell theme into a gresource file
 
 ## Uninstallation

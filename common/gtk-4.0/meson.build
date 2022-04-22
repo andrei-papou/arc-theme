@@ -1,82 +1,15 @@
-# supported versions
-gtk4_versions = ['4.0', '4.2']
-
-# glib-compile-resources dependency
-glib_compile_resources = find_program('glib-compile-resources')
-
-# determine gtk4 version
-if get_option('gtk4_version') != ''
-  gtk4_full_ver = get_option('gtk4_version')
-else
-  gtk4_dep = dependency(
-    'gtk4',
-    version: '>= 4.0',
-    not_found_message : 'Could not determine GTK 4 version'
-  )
-  gtk4_full_ver = gtk4_dep.version()
-endif
-
-gtk4_ver_array = gtk4_full_ver.split('.')
-if gtk4_ver_array[1].to_int().is_even()
-  gtk4_ver = gtk4_ver_array[0] + '.' + gtk4_ver_array[1]
-else
-  # evenize development versions
-  gtk4_ver = gtk4_ver_array[0] + '.' + (gtk4_ver_array[1].to_int() + 1).to_string()
-endif
-
-if gtk4_ver not in gtk4_versions
-  if gtk4_ver.version_compare('>' + gtk4_versions[-1])
-    warning('GTK 4 version ' + gtk4_ver + ' not supported yet, building theme for ' + gtk4_versions[-1])
-    gtk4_ver = gtk4_versions[-1]
-  else
-    error('Unsupported GTK 4 version')
-  endif
-endif
-
 # render PNG assets
 
 gtk4_asset_names = run_command(
-  'cat', gtk4_ver / 'assets.txt',
+  'cat', 'assets' / 'assets.txt',
   check : true
 ).stdout().split()
 
-assets_svg = gtk4_ver / 'assets.svg'
-
-foreach asset : gtk4_asset_names
-  gtk4_assets = custom_target(
-    'gtk4-' + asset,
-    input : assets_svg,
-    output : asset + '.png',
-    command : [
-      inkscape,
-      '--export-id-only',
-      inkscape_ver.version_compare('>=1.0') ? '--export-filename=@OUTPUT@' : '--export-png=@OUTPUT@',
-      '--export-id=' + asset,
-      '--export-dpi=96',
-      '@INPUT@'
-    ],
-    build_by_default : true
-  )
-
-  gtk4_hidpi_assets = custom_target(
-    'gtk4-' + asset + '-hidpi',
-    input : assets_svg,
-    output : asset + '@2.png',
-    command : [
-      inkscape,
-      '--export-id-only',
-      inkscape_ver.version_compare('>=1.0') ? '--export-filename=@OUTPUT@' : '--export-png=@OUTPUT@',
-      '--export-id=' + asset,
-      '--export-dpi=192',
-      '@INPUT@'
-    ],
-    build_by_default : true
-  )
-endforeach
+subdir('assets')
 
 # compile CSS
 
-sass_path = meson.current_source_dir() / gtk4_ver / 'sass'
+sass_path = meson.current_source_dir() / 'sass'
 sass_depend_files = run_command(
   'find',
   sass_path,
@@ -86,20 +19,23 @@ sass_depend_files = run_command(
 
 # always compile the dark CSS
 input_scss_dark = configure_file(
-  input: meson.current_source_dir() / gtk4_ver / 'sass' / 'gtk.scss.in',
+  input: meson.current_source_dir() / 'sass' / 'gtk.scss.in',
   output : 'gtk-dark.scss',
   configuration : {
     'variant' : 'dark',
     'transparency' : get_option('transparency').to_string(),
-    'sass_path' : meson.current_source_dir() / gtk4_ver / 'sass',
+    'sass_path' : meson.current_source_dir() / 'sass',
   }
 )
+
 output_css_dark = 'gtk-main-dark.css'
-gtk4_stylesheet = custom_target(
+gtk4_stylesheets = []
+
+gtk4_stylesheets += custom_target(
   output_css_dark,
   input : input_scss_dark,
   output : output_css_dark,
-  command : [sassc, '@INPUT@', '@OUTPUT@'],
+  command : [sassc, sassc_options, '@INPUT@', '@OUTPUT@'],
   build_by_default : true,
   depend_files : sass_depend_files
 )
@@ -109,20 +45,20 @@ foreach variant : get_option('variants')
 
   if variant != 'dark'
     input_scss = configure_file(
-      input: meson.current_source_dir() / gtk4_ver / 'sass' / 'gtk.scss.in',
+      input: meson.current_source_dir() / 'sass' / 'gtk.scss.in',
       output : 'gtk-' + variant + '.scss',
       configuration : {
         'variant' : variant,
         'transparency' : get_option('transparency').to_string(),
-        'sass_path' : meson.current_source_dir() / gtk4_ver / 'sass',
+        'sass_path' : meson.current_source_dir() / 'sass',
       }
     )
 
-    gtk4_stylesheet = custom_target(
+    gtk4_stylesheets += custom_target(
       output_css,
       input : input_scss,
       output : output_css,
-      command : [sassc, '@INPUT@', '@OUTPUT@'],
+      command : [sassc, sassc_options, '@INPUT@', '@OUTPUT@'],
       build_by_default : true,
       depend_files : sass_depend_files
     )
@@ -136,11 +72,10 @@ foreach variant : get_option('variants')
     '<gresource prefix="/org/gnome/arc-theme">'
   ]
 
-  #TODO update asset paths in SASS files and get rid of the alias=
   foreach asset : gtk4_asset_names
     gresource_xml_array += [
-      '<file preprocess="to-pixdata" alias="assets/' + asset + '.png">' + asset + '.png</file>',
-      '<file preprocess="to-pixdata" alias="assets/' + asset + '@2.png">' + asset + '@2.png</file>'
+      '<file>assets/' + asset + '.png</file>',
+      '<file>assets/' + asset + '@2.png</file>'
     ]
   endforeach
 
@@ -171,18 +106,19 @@ foreach variant : get_option('variants')
     command : [
       glib_compile_resources,
       '--sourcedir=@OUTDIR@',
+      '--sourcedir=@CURRENT_SOURCE_DIR@',
       '--target=@OUTPUT@',
       '@INPUT@'
     ],
-    depends : [gtk4_assets, gtk4_hidpi_assets, gtk4_stylesheet],
+    depends : [gtk4_assets, gtk4_hidpi_assets, gtk4_stylesheets],
+    depend_files : [gtk4_asset_files, gtk4_hidpi_asset_files],
     build_by_default : true
   )
 
   # install gresource
   meson.add_install_script(
-    'sh', '-c',
-    'install -DT' + ' ' +
-    gresource.full_path() + ' ' +
+    install_file,
+    gresource.full_path(),
     '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('gtk4') / 'gtk.gresource'
   )
 
@@ -200,14 +136,12 @@ foreach variant : get_option('variants')
     rename : ['gtk.css']
   )
 
-  if variant != 'dark'
-    #FIXME gtk-dark.css gets overwritten for subsequent variants, resulting in build warnings
-    gtk4_dark_css = configure_file(
-      capture : true,
-      command : ['echo', '@import url("resource:///org/gnome/arc-theme/' + output_css_dark + '");'],
-      output : 'gtk-dark.css',
-      install : true,
-      install_dir : prefix / install_dir.get(variant) / common_dirs.get('gtk4')
-    )
-  endif
+  #FIXME gtk-dark.css gets overwritten for subsequent variants, resulting in build warnings
+  gtk4_dark_css = configure_file(
+    capture : true,
+    command : ['echo', '@import url("resource:///org/gnome/arc-theme/' + output_css_dark + '");'],
+    output : 'gtk-dark.css',
+    install : true,
+    install_dir : prefix / install_dir.get(variant) / common_dirs.get('gtk4')
+  )
 endforeach

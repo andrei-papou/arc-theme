@@ -1,10 +1,5 @@
 # supported versions
-gnome_shell_versions = ['3.18', '3.20', '3.22', '3.24', '3.26', '3.28', '3.30', '3.32', '3.34', '3.36', '3.38', '40', '41']
-
-# glib-compile-resources dependency
-if get_option('gnome_shell_gresource')
-  glib_compile_resources = find_program('glib-compile-resources')
-endif
+gnome_shell_versions = ['3.28', '3.30', '3.32', '3.34', '3.36', '3.38', '40', '41', '42']
 
 # gnome-shell version
 gnome_shell = find_program('gnome-shell', required : false)
@@ -12,7 +7,7 @@ gnome_shell = find_program('gnome-shell', required : false)
 if get_option('gnome_shell_version') != ''
   gnome_shell_full_ver = get_option('gnome_shell_version')
 elif gnome_shell.found()
-  gnome_shell_full_ver = run_command(gnome_shell, '--version').stdout().split()[-1]
+  gnome_shell_full_ver = run_command(gnome_shell, '--version', check : true).stdout().split()[-1]
 else
   error('Could not determine GNOME Shell version')
 endif
@@ -80,7 +75,7 @@ foreach variant : get_option('variants')
     output_css,
     input : input_scss,
     output : output_css,
-    command : [sassc, '@INPUT@', '@OUTPUT@'],
+    command : [sassc, sassc_options, '@INPUT@', '@OUTPUT@'],
     build_by_default : true,
     depend_files : sass_depend_files
   )
@@ -120,9 +115,8 @@ foreach variant : get_option('variants')
   endif
 
   meson.add_install_script(
-    'sh', '-c',
-    'install -DT' + ' ' +
-    gnome_shell_css.full_path() + ' ' +
+    install_file,
+    gnome_shell_css.full_path(),
     '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('gnome-shell') / 'gnome-shell.css'
   )
 

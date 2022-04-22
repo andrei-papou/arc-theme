@@ -15,9 +15,11 @@ foreach variant : get_option('variants')
   if variant == 'light' or variant == 'lighter'
     themerc = 'light/themerc'
     assets = xfwm_light_assets
+    asset_files = xfwm_light_asset_files
   elif variant == 'dark' or variant == 'darker'
     themerc = 'dark/themerc'
     assets = xfwm_dark_assets
+    asset_files = xfwm_dark_asset_files
   endif
 
   install_data(
@@ -25,12 +27,15 @@ foreach variant : get_option('variants')
     install_dir : prefix / install_dir.get(variant) / common_dirs.get('xfwm')
   )
 
+  full_path_assets = []
   foreach asset : assets
-    meson.add_install_script(
-      'sh', '-c',
-      'install -D ' +
-      '-t $MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('xfwm') + ' ' +
-      asset.full_path()
-    )
+    full_path_assets += asset.full_path()
   endforeach
+
+  meson.add_install_script(
+    install_file,
+    full_path_assets,
+    asset_files,
+    '$MESON_INSTALL_DESTDIR_PREFIX' / install_dir.get(variant) / common_dirs.get('xfwm')
+  )
 endforeach
