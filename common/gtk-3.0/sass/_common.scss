@@ -1167,8 +1167,22 @@ headerbar,
   separator.titlebutton { @extend %header_separator; }
 }
 
-.titlebar {
+.titlebar,
+.background .titlebar {
   border-radius: $_header_radius $_header_radius 0 0;
+}
+
+.background.tiled .titlebar,
+.background.tiled-top .titlebar,
+.background.tiled-right .titlebar,
+.background.tiled-bottom .titlebar,
+.background.tiled-left .titlebar,
+.background.maximized .titlebar,
+.background.solid-csd .titlebar {
+  &:backdrop, & {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
 }
 
 headerbar {
@@ -1214,6 +1228,25 @@ headerbar {
       &:backdrop, & {
         border-top-left-radius: $_header_radius;
         border-top-right-radius: $_header_radius;
+      }
+    }
+  }
+
+  window.tiled &,
+  window.tiled-top &,
+  window.tiled-right &,
+  window.tiled-bottom &,
+  window.tiled-left &,
+  window.maximized &,
+  window.fullscreen &,
+  window.solid-csd & {
+    &, &:backdrop {
+      &,
+      &:first-child,
+      &:last-child,
+      &:only-child {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
       }
     }
   }
@@ -3303,12 +3336,17 @@ decoration {
     border-radius: 0;
   }
   // server-side decorations as used by mutter
-  .ssd & {
+  .ssd &,
+  .ssd &:backdrop {
     border-radius: if($variant=='light' or $variant=='lighter', 4px 4px 0 0, 3px 3px 0 0);
     box-shadow: 0 0 0 1px if($variant == 'dark' or $variant == 'darker', transparentize(black, 0.35), $_wm_border);
-
-    &.maximized { border-radius: 0; }
   }
+  .ssd.maximized &,
+  .ssd.maximized &:backdrop {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   .csd.popup & {
     border-radius: 2px;
     box-shadow: 0 3px 6px if($variant != 'dark', $_wm_border, transparentize($_wm_border, 0.1)),
@@ -3322,6 +3360,7 @@ decoration {
     border-radius: 3px;
   }
   .solid-csd & {
+    border: 1px solid $borders_color;
     border-radius: 0;
     margin: 1px;
     background-color: $header_bg;

@@ -170,7 +170,9 @@ StScrollBar {
   border-left-width: 5px;
   color: $selected_bg_color;
 
-  .popup-menu-item.selected & {
+  .popup-menu-item:hover &,
+  .popup-menu-item:active &,
+  .popup-menu-item:focus & {
     -barlevel-background-color: transparentize(black, 0.8);
     -barlevel-active-background-color: $selected_fg_color;
     color: $selected_fg_color;
@@ -522,6 +524,13 @@ StScrollBar {
 }
 
 //
+// Access portal dialog
+//
+.access-dialog {
+  text-align: center;
+}
+
+//
 // Popvers/Menus
 //
 
@@ -560,13 +569,7 @@ $_popup_submenu_border_color: if($variant!='dark', rgba(0, 0, 0, 0.1), rgba(0, 0
   &:ltr { padding: .4em 16px .4em 0em; }
   &:rtl { padding: .4em 0em .4em 16px; }
 
-  &:focus {
-    &, &:checked {
-      background-color: transparent !important;
-    }
-  }
-
-  &:hover, &:active {
+  &:hover, &:active, &:focus {
     &, &:checked {
       color: $selected_fg_color;
       background-color: $selected_bg_color !important;
@@ -706,6 +709,7 @@ $_popup_submenu_border_color: if($variant!='dark', rgba(0, 0, 0, 0.1), rgba(0, 0
 // OSD
 //
 .osd-window {
+  padding: 10px;
   text-align: center;
   font-weight: bold;
   margin: 4em;
@@ -842,6 +846,7 @@ $ws_dot_inactive: $ws_indicator_height / 6;
 
 .workspace-switcher {
   @extend %shell_osd;
+  padding: 10px;
   margin: 4em;
   spacing: 8px;
 }
@@ -1140,7 +1145,7 @@ $ws_dot_inactive: $ws_indicator_height / 6;
     }
   }
 
-  $calendar_day_size: 27px;
+  $calendar_day_size: 2.25em;
 
   .calendar-day-base {
     @include fontsize($font-size * 0.8);
@@ -1360,10 +1365,15 @@ $ws_dot_inactive: $ws_indicator_height / 6;
 .message-list {
   width: 31.5em;
   padding: 9px 0;
+  border-width: 0;
 
   .message-list-placeholder {
     StIcon { width: 0; height: 0; }
-    StLabel { color: $insensitive_fg_color; }
+    StLabel {
+      color: $insensitive_fg_color;
+      font-weight: normal;
+      @include fontsize($font-size);
+    }
   }
 
   StScrollBar { padding: 2px 0; }
@@ -1447,6 +1457,7 @@ $ws_dot_inactive: $ws_indicator_height / 6;
       color: inherit;
       icon-size: $message_icon_size;
       -st-icon-style: symbolic;
+      margin-top: 0.035em;
     }
 
     // fallback
@@ -1478,7 +1489,7 @@ $ws_dot_inactive: $ws_indicator_height / 6;
       color: transparentize($fg_color, 0.4);
       @include fontsize($font-size * 0.9);
       /* HACK: the label should be baseline-aligned with a 1em label, fake this with some bottom padding */
-      padding-bottom: 0.05em;//Use em instead of px, since this depends on font-size
+      padding-bottom: 0.04em;//Use em instead of px, since this depends on font-size
 
       &:ltr { text-align: right };
       &:rtl { text-align: left };
@@ -1653,7 +1664,7 @@ $window_close_button_padding: 0;
 
 .nm-dialog-scroll-view {
   border: 1px solid $borders_color;
-  padding: 5px;
+  padding: 0;
   border-radius: 2px;
   background-color: $base_color;
 }
@@ -1666,6 +1677,7 @@ $window_close_button_padding: 0;
 
   &:selected {
     background-color: $selected_bg_color;
+    border-radius: 0;
     color: $selected_fg_color;
   }
   &:hover {
@@ -2244,6 +2256,7 @@ $_dash_bottom_margin: 20px;
     marging: 0;
     padding: 4px 4px 5px;
     min-height: 0;
+    border-radius: 2px !important;
     font-weight: normal !important;
     @extend %button;
 
@@ -2754,7 +2767,9 @@ $_dash_bottom_margin: 20px;
 }
 
 .unlock-dialog-notification-label {
-  padding: 0px 0px 0px 12px;
+  padding-left: 12px;
+  padding-right: 0;
+  &:rtl { padding-right: 12px; padding-left: 0; }
 }
 
 .unlock-dialog-notification-count-text {
@@ -2946,6 +2961,7 @@ $_screenshot_ui_panel_padding: 15px;
 
 .screenshot-ui-close-button {
   @extend .window-close; // copy window close button
+  padding: $window_close_button_padding !important;
   &.left { margin-left: 8px;}
   &.right { margin-right: 8px;}
 }
